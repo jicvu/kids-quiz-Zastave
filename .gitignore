@@ -9,3 +9,6 @@ icon-512.png
 
 # Netlify
 .netlify/
+
+# Bubblewrap
+$HOME/
