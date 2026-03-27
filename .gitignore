@@ -12,3 +12,11 @@ icon-512.png
 
 # Bubblewrap
 $HOME/
+
+# Build tools
+tailwindcss.exe
+download_flags.py
+input.css
+node_modules/
+package.json
+package-lock.json

@@ -11,12 +11,10 @@
     <meta name="apple-mobile-web-app-title" content="Zastave Sveta">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon.svg">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="tailwind.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap');
-        
         body {
-            font-family: 'Nunito', sans-serif;
+            font-family: 'Nunito', 'Varela Round', 'Comic Sans MS', 'Trebuchet MS', sans-serif;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
             background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
@@ -564,7 +562,7 @@
             isTransitioning = false;
             const flagImg = document.getElementById('flagImg');
             flagImg.style.opacity = '0';
-            flagImg.src = `https://flagcdn.com/w320/${currentFlag.code}.png`;
+            flagImg.src = `./flags/${currentFlag.code}.png`;
             flagImg.onload = () => {
                 flagImg.style.opacity = '1';
                 document.getElementById('celebration').classList.add('hidden');
