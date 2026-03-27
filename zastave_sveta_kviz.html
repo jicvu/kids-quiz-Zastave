@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Zastave Sveta - Kviz za decu</title>
+    <meta name="theme-color" content="#6366f1">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Zastave Sveta">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon.svg">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap');
+        
+        body {
+            font-family: 'Nunito', sans-serif;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
+            min-height: 100vh;
+        }
+
+        @keyframes pop {
+            0% { transform: scale(0.95); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
+        @keyframes fall {
+            0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        .animate-pop { animation: pop 0.3s ease-out; }
+        .animate-shake { animation: shake 0.2s ease-in-out 2; }
+        
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            z-index: 100;
+            pointer-events: none;
+            border-radius: 2px;
+            animation: fall 2.5s linear forwards;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .flag-shadow {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+
+        .timer-container {
+            position: relative;
+            width: 50px;
+            height: 50px;
+        }
+        .timer-svg {
+            transform: rotate(-90deg);
+        }
+        .timer-circle-bg {
+            fill: none;
+            stroke: #e2e8f0;
+            stroke-width: 4;
+        }
+        .timer-circle-fg {
+            fill: none;
+            stroke: #6366f1;
+            stroke-width: 4;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.1s linear, stroke 0.3s ease;
+        }
+
+        .continent-btn {
+            background: white;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .continent-btn:hover {
+            transform: scale(1.02);
+            background: #f8fafc;
+            border-color: #cbd5e1;
+        }
+        .continent-btn:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center p-4 overflow-hidden">
+
+    <!-- Screen 1: Continent Selection -->
+    <div id="selectionScreen" class="w-full max-w-2xl glass-card rounded-[2.5rem] shadow-2xl p-8 flex flex-col items-center z-20">
+        <h1 class="text-4xl font-black text-slate-800 mb-2 text-center">🌍 Zastave Sveta</h1>
+        <p id="chooseText" class="text-lg text-slate-500 font-bold mb-8 text-center">Izaberi kontinent:</p>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+            <button onclick="selectContinent('europe')" class="continent-btn text-slate-700 text-xl font-black py-6 rounded-3xl border-b-4 border-slate-200 shadow-sm">
+                Evropa
+            </button>
+            <button onclick="selectContinent('asia')" class="continent-btn text-slate-700 text-xl font-black py-6 rounded-3xl border-b-4 border-slate-200 shadow-sm">
+                Azija
+            </button>
+            <button onclick="selectContinent('africa')" class="continent-btn text-slate-700 text-xl font-black py-6 rounded-3xl border-b-4 border-slate-200 shadow-sm">
+                Afrika
+            </button>
+            <button onclick="selectContinent('northAmerica')" class="continent-btn text-slate-700 text-xl font-black py-6 rounded-3xl border-b-4 border-slate-200 shadow-sm">
+                Severna Amerika
+            </button>
+            <button onclick="selectContinent('southAmerica')" class="continent-btn text-slate-700 text-xl font-black py-6 rounded-3xl border-b-4 border-slate-200 shadow-sm">
+                Južna Amerika
+            </button>
+            <button onclick="selectContinent('australia')" class="continent-btn text-slate-700 text-xl font-black py-6 rounded-3xl border-b-4 border-slate-200 shadow-sm">
+                Australija
+            </button>
+        </div>
+    </div>
+
+    <!-- Screen 2: Main Game -->
+    <div id="gameScreen" class="hidden w-full flex flex-col items-center">
+        <!-- Top Bar with Timer, Reset and Score -->
+        <div class="w-full max-w-2xl flex justify-between items-center mb-6 z-10 gap-2">
+            
+            <button id="resetBtn" class="flex items-center justify-center bg-white/80 h-12 px-4 rounded-2xl shadow-sm border-b-4 border-slate-200 text-slate-600 font-black hover:bg-white active:scale-95 transition-all">
+                <span class="mr-1">🏠</span> <span id="resetText" class="hidden sm:inline">Nazad</span>
+            </button>
+
+            <div class="timer-container bg-white/80 rounded-full shadow-sm p-1 flex items-center justify-center">
+                <svg class="timer-svg" width="44" height="44">
+                    <circle class="timer-circle-bg" cx="22" cy="22" r="18"></circle>
+                    <circle id="timerBar" class="timer-circle-fg" cx="22" cy="22" r="18" stroke-dasharray="113.1" stroke-dashoffset="0"></circle>
+                </svg>
+                <span id="timerText" class="absolute text-[10px] font-black text-indigo-600">10</span>
+            </div>
+
+            <div class="flex flex-1 justify-end items-center gap-2">
+                <div class="flex items-center gap-2 bg-white/80 px-3 py-2 rounded-2xl shadow-sm border-b-4 border-indigo-200">
+                    <span id="streakEmoji">🔥</span>
+                    <span id="streakVal" class="font-black text-indigo-600">0</span>
+                </div>
+                <div class="flex items-center gap-2 bg-white/80 px-3 py-2 rounded-2xl shadow-sm border-b-4 border-amber-200">
+                    <span>⭐</span>
+                    <span id="scoreVal" class="font-black text-amber-600">0</span>
+                </div>
+                <button id="langToggle" class="bg-indigo-500 hover:bg-indigo-600 text-white w-10 h-10 rounded-xl font-black transition-all active:scale-95 shadow-md text-xs">
+                    EN
+                </button>
+            </div>
+        </div>
+
+        <div id="gameCard" class="w-full max-w-2xl glass-card rounded-[2.5rem] shadow-2xl p-6 sm:p-10 flex flex-col items-center relative overflow-hidden">
+            <div id="celebration" class="hidden absolute inset-0 z-40 flex flex-col items-center justify-center bg-white/90 backdrop-blur-md">
+                <div class="text-8xl mb-4 animate-bounce">🌟</div>
+                <h2 id="bravoText" class="text-4xl font-black text-green-600 text-center uppercase tracking-tighter">Odlično!</h2>
+                <p id="nextText" class="text-slate-400 font-bold mt-2">Spremi se za sledeću...</p>
+            </div>
+
+            <div class="text-center mb-6">
+                <h1 id="mainTitle" class="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">Zastave</h1>
+                <p id="subTitle" class="text-lg text-slate-500 font-bold">Pronađi državu:</p>
+            </div>
+
+            <div class="relative mb-8 group">
+                <div class="absolute -inset-2 bg-gradient-to-r from-indigo-500 to-sky-400 rounded-[2rem] blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
+                <div class="relative bg-white p-3 rounded-[1.8rem] flag-shadow">
+                    <img id="flagImg" src="" alt="Zastava" class="w-56 h-auto sm:w-80 object-cover rounded-xl border-4 border-slate-50" draggable="false">
+                </div>
+            </div>
+
+            <div id="optionsGrid" class="w-full grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+        </div>
+    </div>
+
+    <script>
+        const flagsDB = {
+            europe: [
+                { code: 'rs', en: 'Serbia', sr: 'Srbija' },
+                { code: 'fr', en: 'France', sr: 'Francuska' },
+                { code: 'de', en: 'Germany', sr: 'Nemačka' },
+                { code: 'it', en: 'Italy', sr: 'Italija' },
+                { code: 'es', en: 'Spain', sr: 'Španija' },
+                { code: 'gb', en: 'United Kingdom', sr: 'Ujedinjeno Kraljevstvo' },
+                { code: 'hr', en: 'Croatia', sr: 'Hrvatska' },
+                { code: 'ba', en: 'Bosnia', sr: 'Bosna i Hercegovina' },
+                { code: 'me', en: 'Montenegro', sr: 'Crna Gora' },
+                { code: 'si', en: 'Slovenia', sr: 'Slovenija' },
+                { code: 'gr', en: 'Greece', sr: 'Grčka' },
+                { code: 'at', en: 'Austria', sr: 'Austrija' },
+                { code: 'be', en: 'Belgium', sr: 'Belgija' },
+                { code: 'nl', en: 'Netherlands', sr: 'Holandija' },
+                { code: 'se', en: 'Sweden', sr: 'Švedska' },
+                { code: 'no', en: 'Norway', sr: 'Norveška' },
+                { code: 'pt', en: 'Portugal', sr: 'Portugalija' },
+                { code: 'ch', en: 'Switzerland', sr: 'Švajcarska' },
+                { code: 'al', en: 'Albania', sr: 'Albanija' },
+                { code: 'ad', en: 'Andorra', sr: 'Andora' },
+                { code: 'by', en: 'Belarus', sr: 'Belorusija' },
+                { code: 'bg', en: 'Bulgaria', sr: 'Bugarska' },
+                { code: 'cy', en: 'Cyprus', sr: 'Kipar' },
+                { code: 'cz', en: 'Czech Republic', sr: 'Češka' },
+                { code: 'dk', en: 'Denmark', sr: 'Danska' },
+                { code: 'ee', en: 'Estonia', sr: 'Estonija' },
+                { code: 'fi', en: 'Finland', sr: 'Finska' },
+                { code: 'ge', en: 'Georgia', sr: 'Gruzija' },
+                { code: 'hu', en: 'Hungary', sr: 'Mađarska' },
+                { code: 'is', en: 'Iceland', sr: 'Island' },
+                { code: 'ie', en: 'Ireland', sr: 'Irska' },
+                { code: 'lv', en: 'Latvia', sr: 'Letonija' },
+                { code: 'li', en: 'Liechtenstein', sr: 'Lihtenštajn' },
+                { code: 'lt', en: 'Lithuania', sr: 'Litvanija' },
+                { code: 'lu', en: 'Luxembourg', sr: 'Luksemburg' },
+                { code: 'mt', en: 'Malta', sr: 'Malta' },
+                { code: 'md', en: 'Moldova', sr: 'Moldavija' },
+                { code: 'mc', en: 'Monaco', sr: 'Monako' },
+                { code: 'mk', en: 'N. Macedonia', sr: 'Severna Makedonija' },
+                { code: 'pl', en: 'Poland', sr: 'Poljska' },
+                { code: 'ro', en: 'Romania', sr: 'Rumunija' },
+                { code: 'ru', en: 'Russia', sr: 'Rusija' },
+                { code: 'sm', en: 'San Marino', sr: 'San Marino' },
+                { code: 'sk', en: 'Slovakia', sr: 'Slovačka' },
+                { code: 'ua', en: 'Ukraine', sr: 'Ukrajna' },
+                { code: 'va', en: 'Vatican', sr: 'Vatikan' }
+            ],
+            asia: [
+                { code: 'jp', en: 'Japan', sr: 'Japan' },
+                { code: 'cn', en: 'China', sr: 'Kina' },
+                { code: 'in', en: 'India', sr: 'Indija' },
+                { code: 'kr', en: 'South Korea', sr: 'Južna Koreja' },
+                { code: 'tr', en: 'Turkey', sr: 'Turska' },
+                { code: 'vn', en: 'Vietnam', sr: 'Vijetnam' },
+                { code: 'th', en: 'Thailand', sr: 'Tajland' },
+                { code: 'id', en: 'Indonesia', sr: 'Indonezija' },
+                { code: 'il', en: 'Israel', sr: 'Izrael' },
+                { code: 'sa', en: 'Saudi Arabia', sr: 'Saudijska Arabija' },
+                { code: 'af', en: 'Afghanistan', sr: 'Avganistan' },
+                { code: 'am', en: 'Armenia', sr: 'Jermenija' },
+                { code: 'az', en: 'Azerbaijan', sr: 'Azerbejdžan' },
+                { code: 'bh', en: 'Bahrain', sr: 'Bahrein' },
+                { code: 'bd', en: 'Bangladesh', sr: 'Bangladeš' },
+                { code: 'bt', en: 'Bhutan', sr: 'Butan' },
+                { code: 'bn', en: 'Brunei', sr: 'Brunej' },
+                { code: 'kh', en: 'Cambodia', sr: 'Kambodža' },
+                { code: 'ir', en: 'Iran', sr: 'Iran' },
+                { code: 'iq', en: 'Iraq', sr: 'Irak' },
+                { code: 'jo', en: 'Jordan', sr: 'Jordan' },
+                { code: 'kz', en: 'Kazakhstan', sr: 'Kazahstan' },
+                { code: 'kw', en: 'Kuwait', sr: 'Kuvajt' },
+                { code: 'kg', en: 'Kyrgyzstan', sr: 'Kirgistan' },
+                { code: 'la', en: 'Laos', sr: 'Laos' },
+                { code: 'lb', en: 'Lebanon', sr: 'Liban' },
+                { code: 'my', en: 'Malaysia', sr: 'Malezija' },
+                { code: 'mv', en: 'Maldives', sr: 'Maldivi' },
+                { code: 'mn', en: 'Mongolia', sr: 'Mongolija' },
+                { code: 'mm', en: 'Myanmar', sr: 'Mijanmar' },
+                { code: 'np', en: 'Nepal', sr: 'Nepal' },
+                { code: 'kp', en: 'North Korea', sr: 'Severna Koreja' },
+                { code: 'om', en: 'Oman', sr: 'Oman' },
+                { code: 'pk', en: 'Pakistan', sr: 'Pakistan' },
+                { code: 'ps', en: 'Palestine', sr: 'Palestina' },
+                { code: 'ph', en: 'Philippines', sr: 'Filipini' },
+                { code: 'qa', en: 'Qatar', sr: 'Katar' },
+                { code: 'sg', en: 'Singapore', sr: 'Singapur' },
+                { code: 'lk', en: 'Sri Lanka', sr: 'Šri Lanka' },
+                { code: 'sy', en: 'Syria', sr: 'Sirija' },
+                { code: 'tw', en: 'Taiwan', sr: 'Tajvan' },
+                { code: 'tj', en: 'Tajikistan', sr: 'Tadžikistan' },
+                { code: 'tl', en: 'Timor-Leste', sr: 'Timor-Leste' },
+                { code: 'tm', en: 'Turkmenistan', sr: 'Turkmenistan' },
+                { code: 'ae', en: 'UAE', sr: 'Ujedinjeni Arapski Emirati' },
+                { code: 'uz', en: 'Uzbekistan', sr: 'Uzbekistan' },
+                { code: 'ye', en: 'Yemen', sr: 'Jemen' }
+            ],
+            africa: [
+                { code: 'eg', en: 'Egypt', sr: 'Egipat' },
+                { code: 'za', en: 'South Africa', sr: 'Južnoafrička Republika' },
+                { code: 'ng', en: 'Nigeria', sr: 'Nigerija' },
+                { code: 'ma', en: 'Morocco', sr: 'Maroko' },
+                { code: 'ke', en: 'Kenya', sr: 'Kenija' },
+                { code: 'dz', en: 'Algeria', sr: 'Alžir' },
+                { code: 'et', en: 'Ethiopia', sr: 'Etiopija' },
+                { code: 'gh', en: 'Ghana', sr: 'Gana' },
+                { code: 'ao', en: 'Angola', sr: 'Angola' },
+                { code: 'bj', en: 'Benin', sr: 'Benin' },
+                { code: 'bw', en: 'Botswana', sr: 'Bocvana' },
+                { code: 'bf', en: 'Burkina Faso', sr: 'Burkina Faso' },
+                { code: 'bi', en: 'Burundi', sr: 'Burundi' },
+                { code: 'cv', en: 'Cape Verde', sr: 'Zelenortska Ostrva' },
+                { code: 'cm', en: 'Cameroon', sr: 'Kamerun' },
+                { code: 'cf', en: 'C. African Rep.', sr: 'Centralnoafrička Republika' },
+                { code: 'td', en: 'Chad', sr: 'Čad' },
+                { code: 'km', en: 'Comoros', sr: 'Komori' },
+                { code: 'cg', en: 'Congo', sr: 'Kongo' },
+                { code: 'cd', en: 'DR Congo', sr: 'DR Kongo' },
+                { code: 'dj', en: 'Djibouti', sr: 'Džibuti' },
+                { code: 'gq', en: 'Eq. Guinea', sr: 'Ekvatorijalna Gvineja' },
+                { code: 'er', en: 'Eritrea', sr: 'Eritreja' },
+                { code: 'sz', en: 'Eswatini', sr: 'Esvatini' },
+                { code: 'ga', en: 'Gabon', sr: 'Gabon' },
+                { code: 'gm', en: 'Gambia', sr: 'Gambija' },
+                { code: 'gn', en: 'Guinea', sr: 'Gvineja' },
+                { code: 'gw', en: 'Guinea-Bissau', sr: 'Gvineja Bisao' },
+                { code: 'ci', en: 'Ivory Coast', sr: 'Obala Slonovače' },
+                { code: 'ls', en: 'Lesotho', sr: 'Lesoto' },
+                { code: 'lr', en: 'Liberia', sr: 'Liberija' },
+                { code: 'ly', en: 'Libya', sr: 'Libija' },
+                { code: 'mg', en: 'Madagascar', sr: 'Madagaskar' },
+                { code: 'mw', en: 'Malawi', sr: 'Malavi' },
+                { code: 'ml', en: 'Mali', sr: 'Mali' },
+                { code: 'mr', en: 'Mauritania', sr: 'Mauritanija' },
+                { code: 'mu', en: 'Mauritius', sr: 'Mauricijus' },
+                { code: 'mz', en: 'Mozambique', sr: 'Mozambik' },
+                { code: 'na', en: 'Namibia', sr: 'Namibija' },
+                { code: 'ne', en: 'Niger', sr: 'Niger' },
+                { code: 'rw', en: 'Rwanda', sr: 'Ruanda' },
+                { code: 'st', en: 'São Tomé', sr: 'Sao Tome i Principe' },
+                { code: 'sn', en: 'Senegal', sr: 'Senegal' },
+                { code: 'sl', en: 'Sierra Leone', sr: 'Sijera Leone' },
+                { code: 'so', en: 'Somalia', sr: 'Somalija' },
+                { code: 'ss', en: 'South Sudan', sr: 'Južni Sudan' },
+                { code: 'sd', en: 'Sudan', sr: 'Sudan' },
+                { code: 'tz', en: 'Tanzania', sr: 'Tanzanija' },
+                { code: 'tg', en: 'Togo', sr: 'Togo' },
+                { code: 'tn', en: 'Tunisia', sr: 'Tunis' },
+                { code: 'ug', en: 'Uganda', sr: 'Uganda' },
+                { code: 'zm', en: 'Zambia', sr: 'Zambija' },
+                { code: 'zw', en: 'Zimbabwe', sr: 'Zimbabve' }
+            ],
+            northAmerica: [
+                { code: 'us', en: 'USA', sr: 'SAD' },
+                { code: 'ca', en: 'Canada', sr: 'Kanada' },
+                { code: 'mx', en: 'Mexico', sr: 'Meksiko' },
+                { code: 'cu', en: 'Cuba', sr: 'Kuba' },
+                { code: 'jm', en: 'Jamaica', sr: 'Jamajka' },
+                { code: 'pa', en: 'Panama', sr: 'Panama' },
+                { code: 'cr', en: 'Costa Rica', sr: 'Kostarika' },
+                { code: 'gt', en: 'Guatemala', sr: 'Gvatemala' },
+                { code: 'ag', en: 'Antigua & Barbuda', sr: 'Antigva i Barbuda' },
+                { code: 'bs', en: 'Bahamas', sr: 'Bahami' },
+                { code: 'bb', en: 'Barbados', sr: 'Barbados' },
+                { code: 'bz', en: 'Belize', sr: 'Belize' },
+                { code: 'dm', en: 'Dominica', sr: 'Dominika' },
+                { code: 'do', en: 'Dominican Rep.', sr: 'Dominikanska Republika' },
+                { code: 'sv', en: 'El Salvador', sr: 'Salvador' },
+                { code: 'gd', en: 'Grenada', sr: 'Grenada' },
+                { code: 'ht', en: 'Haiti', sr: 'Haiti' },
+                { code: 'hn', en: 'Honduras', sr: 'Honduras' },
+                { code: 'ni', en: 'Nicaragua', sr: 'Nikaragva' },
+                { code: 'kn', en: 'St. Kitts & Nevis', sr: 'Sveti Kits i Nevis' },
+                { code: 'lc', en: 'Saint Lucia', sr: 'Sveta Lucija' },
+                { code: 'vc', en: 'St. Vincent', sr: 'Sveti Vinsent' },
+                { code: 'tt', en: 'Trinidad & Tobago', sr: 'Trinidad i Tobago' }
+            ],
+            southAmerica: [
+                { code: 'br', en: 'Brazil', sr: 'Brazil' },
+                { code: 'ar', en: 'Argentina', sr: 'Argentina' },
+                { code: 'cl', en: 'Chile', sr: 'Čile' },
+                { code: 'co', en: 'Colombia', sr: 'Kolumbija' },
+                { code: 'pe', en: 'Peru', sr: 'Peru' },
+                { code: 'uy', en: 'Uruguay', sr: 'Urugvaj' },
+                { code: 've', en: 'Venezuela', sr: 'Venecuela' },
+                { code: 'bo', en: 'Bolivia', sr: 'Bolivija' },
+                { code: 'ec', en: 'Ecuador', sr: 'Ekvador' },
+                { code: 'gy', en: 'Guyana', sr: 'Gvajana' },
+                { code: 'py', en: 'Paraguay', sr: 'Paragvaj' },
+                { code: 'sr', en: 'Suriname', sr: 'Surinam' }
+            ],
+            australia: [
+                { code: 'au', en: 'Australia', sr: 'Australija' },
+                { code: 'nz', en: 'New Zealand', sr: 'Novi Zeland' },
+                { code: 'fj', en: 'Fiji', sr: 'Fidži' },
+                { code: 'pg', en: 'Papua New Guinea', sr: 'Papua Nova Gvineja' },
+                { code: 'vu', en: 'Vanuatu', sr: 'Vanuatu' },
+                { code: 'ws', en: 'Samoa', sr: 'Samoa' },
+                { code: 'ki', en: 'Kiribati', sr: 'Kiribati' },
+                { code: 'mh', en: 'Marshall Islands', sr: 'Maršalska Ostrva' },
+                { code: 'fm', en: 'Micronesia', sr: 'Mikronezija' },
+                { code: 'nr', en: 'Nauru', sr: 'Nauru' },
+                { code: 'pw', en: 'Palau', sr: 'Palau' },
+                { code: 'sb', en: 'Solomon Islands', sr: 'Solomonska Ostrva' },
+                { code: 'to', en: 'Tonga', sr: 'Tonga' },
+                { code: 'tv', en: 'Tuvalu', sr: 'Tuvalu' }
+            ]
+        };
+
+        let lang = 'sr';
+        let score = 0;
+        let streak = 0;
+        let currentContinent = 'europe';
+        let currentFlag = null;
+        let options = [];
+        let isTransitioning = false;
+        let wrongIndices = new Set();
+        
+        let timeLeft = 10;
+        const totalTime = 10;
+        let timerId = null;
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function selectContinent(continent) {
+            currentContinent = continent;
+            document.getElementById('selectionScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+            score = 0;
+            streak = 0;
+            nextQuestion();
+        }
+
+        function playSound(isCorrect) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            if (isCorrect) {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } else {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+            }
+        }
+
+        function createConfetti() {
+            const colors = ['#6366f1', '#38bdf8', '#fbbf24', '#4ade80', '#f472b6'];
+            for (let i = 0; i < 40; i++) {
+                const conf = document.createElement('div');
+                conf.className = 'confetti';
+                conf.style.left = Math.random() * 100 + 'vw';
+                conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                conf.style.animationDelay = Math.random() * 0.5 + 's';
+                conf.style.width = (Math.random() * 8 + 8) + 'px';
+                conf.style.height = conf.style.width;
+                document.body.appendChild(conf);
+                setTimeout(() => conf.remove(), 2500);
+            }
+        }
+
+        function startTimer() {
+            clearInterval(timerId);
+            timeLeft = totalTime;
+            updateTimerUI();
+            timerId = setInterval(() => {
+                if (isTransitioning) return;
+                timeLeft -= 0.1;
+                if (timeLeft <= 0) {
+                    timeLeft = 0;
+                    clearInterval(timerId);
+                    handleTimeout();
+                }
+                updateTimerUI();
+            }, 100);
+        }
+
+        function updateTimerUI() {
+            const bar = document.getElementById('timerBar');
+            const text = document.getElementById('timerText');
+            const radius = 18;
+            const circumference = 2 * Math.PI * radius;
+            const offset = circumference - (timeLeft / totalTime) * circumference;
+            bar.style.strokeDashoffset = offset;
+            text.innerText = Math.ceil(timeLeft);
+            if (timeLeft < 3) {
+                bar.style.stroke = "#ef4444";
+                text.style.color = "#ef4444";
+            } else {
+                bar.style.stroke = "#6366f1";
+                text.style.color = "#6366f1";
+            }
+        }
+
+        function handleTimeout() {
+            playSound(false);
+            streak = 0;
+            isTransitioning = true;
+            document.getElementById('gameCard').classList.add('animate-shake');
+            setTimeout(() => {
+                document.getElementById('gameCard').classList.remove('animate-shake');
+                nextQuestion();
+            }, 1500);
+        }
+
+        function updateUI() {
+            document.getElementById('scoreVal').innerText = score;
+            document.getElementById('streakVal').innerText = streak;
+            document.getElementById('langToggle').innerText = lang === 'sr' ? 'EN' : 'SR';
+            
+            const areaNames = {
+                europe: { sr: 'Evrope', en: 'Europe' },
+                asia: { sr: 'Azije', en: 'Asia' },
+                africa: { sr: 'Afrike', en: 'Africa' },
+                northAmerica: { sr: 'Severne Amerike', en: 'N. America' },
+                southAmerica: { sr: 'Južne Amerike', en: 'S. America' },
+                australia: { sr: 'Australije', en: 'Australia' }
+            };
+
+            document.getElementById('mainTitle').innerText = (lang === 'sr' ? 'Zastave ' : 'Flags of ') + areaNames[currentContinent][lang];
+            document.getElementById('subTitle').innerText = lang === 'sr' ? 'Pronađi državu:' : 'Find the country:';
+            document.getElementById('bravoText').innerText = lang === 'sr' ? 'ODLIČNO!' : 'FANTASTIC!';
+            document.getElementById('resetText').innerText = lang === 'sr' ? 'Nazad' : 'Back';
+            document.getElementById('chooseText').innerText = lang === 'sr' ? 'Izaberi kontinent:' : 'Choose a continent:';
+            
+            const grid = document.getElementById('optionsGrid');
+            grid.innerHTML = '';
+            
+            options.forEach((country, index) => {
+                const btn = document.createElement('button');
+                const isWrong = wrongIndices.has(index);
+                btn.className = `w-full text-lg sm:text-xl font-black py-4 px-4 rounded-[1.5rem] transition-all duration-200 border-b-4 
+                    ${isWrong ? 'bg-slate-100 text-slate-300 border-slate-200 cursor-not-allowed scale-95' 
+                              : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 active:scale-95 shadow-sm'}`;
+                btn.innerText = country[lang];
+                btn.onclick = () => {
+                    if (isTransitioning || isWrong) return;
+                    handleSelection(country, index, btn);
+                };
+                grid.appendChild(btn);
+            });
+        }
+
+        function handleSelection(country, index, btn) {
+            if (country.code === currentFlag.code) {
+                isTransitioning = true;
+                clearInterval(timerId);
+                playSound(true);
+                btn.className = "w-full text-lg sm:text-xl font-black py-4 px-4 rounded-[1.5rem] bg-green-500 text-white border-green-700 shadow-lg scale-105 animate-pop";
+                if (wrongIndices.size === 0) { score += 10; streak++; }
+                document.getElementById('celebration').classList.remove('hidden');
+                createConfetti();
+                setTimeout(nextQuestion, 2000);
+            } else {
+                playSound(false);
+                streak = 0;
+                wrongIndices.add(index);
+                document.getElementById('gameCard').classList.add('animate-shake');
+                setTimeout(() => document.getElementById('gameCard').classList.remove('animate-shake'), 400);
+                updateUI();
+            }
+        }
+
+        function nextQuestion() {
+            const data = flagsDB[currentContinent];
+            const shuffled = [...data].sort(() => 0.5 - Math.random());
+            options = shuffled.slice(0, 4);
+            currentFlag = options[Math.floor(Math.random() * 4)];
+            wrongIndices.clear();
+            isTransitioning = false;
+            const flagImg = document.getElementById('flagImg');
+            flagImg.style.opacity = '0';
+            flagImg.src = `https://flagcdn.com/w320/${currentFlag.code}.png`;
+            flagImg.onload = () => {
+                flagImg.style.opacity = '1';
+                document.getElementById('celebration').classList.add('hidden');
+                updateUI();
+                startTimer();
+            };
+        }
+
+        document.getElementById('langToggle').onclick = () => {
+            lang = lang === 'sr' ? 'en' : 'sr';
+            updateUI();
+        };
+
+        document.getElementById('resetBtn').onclick = () => {
+            clearInterval(timerId);
+            document.getElementById('gameScreen').classList.add('hidden');
+            document.getElementById('selectionScreen').classList.remove('hidden');
+        };
+
+        // Register service worker for offline / PWA support
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(() => {});
+            });
+        }
+    </script>
+</body>
+</html>

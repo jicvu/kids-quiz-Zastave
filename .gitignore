@@ -1,0 +1,11 @@
+# Python build helpers (not part of the app)
+generate_icons.py
+generate_qr.py
+
+# Generated files
+qrcode_test.png
+icon-192.png
+icon-512.png
+
+# Netlify
+.netlify/
