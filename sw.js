@@ -1,4 +1,4 @@
-const CACHE_NAME = 'zastave-sveta-v2';
+const CACHE_NAME = 'zastave-sveta-v3';
 
 // All flag codes
 const FLAG_CODES = [
