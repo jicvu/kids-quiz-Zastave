@@ -4,7 +4,7 @@
   "description": "Kviz o zastavama sveta za decu",
   "start_url": "./zastave_sveta_kviz.html",
   "scope": "./",
-  "display": "standalone",
+  "display": "fullscreen",
   "background_color": "#e0f2fe",
   "theme_color": "#6366f1",
   "orientation": "portrait-primary",
